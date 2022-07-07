@@ -1,4 +1,4 @@
-from app import create_app
+from app.app import create_app
 from flask import current_app
 from flask_sqlalchemy import get_debug_queries
 
