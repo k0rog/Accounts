@@ -1,19 +1,20 @@
 from http import HTTPStatus
-from flask_apispec import marshal_with, MethodResource, use_kwargs
 from injector import inject
 from app.repositories.base import BaseRepository
 from flask_restful import Resource
 from app.schemas.customer import CustomerCreateSchema
 from webargs.flaskparser import use_args
+from app.utils.response_serializer import serialize_response
 
 
-class CustomerResource(MethodResource, Resource):
+class CustomerResource(Resource):
     @inject
     def __init__(self, repository: BaseRepository):
         self.repository = repository
 
     @use_args(CustomerCreateSchema())
-    @marshal_with(None, code=HTTPStatus.NO_CONTENT)
+    @serialize_response(CustomerCreateSchema(), HTTPStatus.CREATED)
     def post(self, customer):
-        self.repository.create_customer(customer)
-        return ''
+        customer = self.repository.create_customer(customer)
+
+        return customer

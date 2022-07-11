@@ -17,7 +17,7 @@ def create_app(config_class=Config):
     api.add_resource(CustomerResource, '/api/customers/', endpoint='customer')
     api.init_app(app)
 
-    injector = Injector([SQLAlchemyModule(app=app)])
+    injector = Injector([SQLAlchemyModule(app=app, config=app.config)])
     FlaskInjector(app=app, injector=injector)
 
     return app
