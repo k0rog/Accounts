@@ -1,21 +1,26 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_restful import Api
 from config import Config
-from flask_marshmallow import Marshmallow
+from injector import Injector
+from flask_injector import FlaskInjector
+from app.dependency_injection import SQLAlchemyModule
+from app.resources.customer import CustomerResource
 
 
-db = SQLAlchemy()
-migrate = Migrate()
-ma = Marshmallow()
+api = Api()
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    db.init_app(app)
-    ma.init_app(app)
-    migrate.init_app(app, db)
+    api.add_resource(CustomerResource, '/api/customers/', endpoint='customer')
+    api.init_app(app)
+
+    injector = Injector([SQLAlchemyModule(app=app)])
+    FlaskInjector(app=app, injector=injector)
 
     return app
+
+
+from app.models import Customer
