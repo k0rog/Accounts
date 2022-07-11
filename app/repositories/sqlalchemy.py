@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from app.repositories.base import BaseRepository
-from app.models import Customer
+from app.models.sqlalchemy import Customer
 from app.exceptions import AlreadyExists
 
 

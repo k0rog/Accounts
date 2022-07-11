@@ -23,4 +23,4 @@ def create_app(config_class=Config):
     return app
 
 
-from app.models import Customer
+from app.models import sqlalchemy
