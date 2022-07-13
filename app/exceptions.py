@@ -1,24 +1,24 @@
 from http import HTTPStatus
-from flask import make_response, jsonify
+from flask import make_response
 
 
 class AppException(Exception):
-    pass
+    """Base exception to be caught"""
 
 
-class AlreadyExists(AppException):
-    pass
+class AlreadyExistsException(AppException):
+    """Duplicate PK"""
 
 
-class ValidationError(AppException):
-    pass
+class ValidationException(AppException):
+    """Domain constraint violation"""
 
 
 def app_exception_handler(exception):
     http_code = 418
-    if isinstance(exception, AlreadyExists):
+    if isinstance(exception, AlreadyExistsException):
         http_code = HTTPStatus.BAD_REQUEST
-    elif isinstance(exception, ValidationError):
+    elif isinstance(exception, ValidationException):
         http_code = HTTPStatus.BAD_REQUEST
     r = make_response(
         {'error': str(exception)}, http_code

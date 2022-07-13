@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from app.repositories.base import BaseRepository
 from app.models.sqlalchemy import Customer, BankAccount
-from app.exceptions import AlreadyExists
+from app.exceptions import AlreadyExistsException
 
 
 class SQLAlchemyRepository(BaseRepository):
@@ -18,7 +18,7 @@ class SQLAlchemyRepository(BaseRepository):
 
     def create_customer(self, data: dict) -> Customer:
         if self.check_customer(data['passport_number']):
-            raise AlreadyExists('Customer already exists!')
+            raise AlreadyExistsException('Customer already exists!')
 
         customer = Customer(
             passport_number=data['passport_number'],
