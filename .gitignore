@@ -3,3 +3,4 @@
 /pgdata/
 .env
 .flaskenv
+.env.docker

@@ -1,0 +1,3 @@
+FLASK_APP=your_init_file
+FLASK_ENV=env_type
+FLASK_DEBUG=debug_mode
