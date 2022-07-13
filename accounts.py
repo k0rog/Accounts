@@ -39,5 +39,14 @@ def handle_error(err):
 app.errorhandler(AppException)(app_exception_handler)
 
 
+from app.storage.sqlalchemy import db
+from app.models.sqlalchemy.bank_account import BankAccount
+
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'BankAccount': BankAccount}
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', load_dotenv=True)

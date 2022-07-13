@@ -18,5 +18,5 @@ class BaseBankAccountRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_unique_iban(self):
+    def _get_unique_iban(self):
         raise NotImplementedError
