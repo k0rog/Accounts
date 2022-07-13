@@ -9,6 +9,7 @@ app = create_app()
 
 @app.after_request
 def after_request(response):
+    """Logs database request content and database request count per every client request"""
     current_app.logger.info('------------------')
     queries = get_debug_queries()
     current_app.logger.info(f'QUERIES COUNT: {len(queries)}')
