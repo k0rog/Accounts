@@ -11,6 +11,14 @@ class BaseCustomerRepository(ABC):
     def create_customer(self, data: dict):
         raise NotImplementedError
 
+    @abstractmethod
+    def update_customer(self, passport_number: str, data: dict):
+        raise NotImplementedError
+
+    @abstractmethod
+    def has_bank_account(self, passport_number: str) -> bool:
+        raise NotImplementedError
+
 
 class BaseBankAccountRepository(ABC):
     @abstractmethod

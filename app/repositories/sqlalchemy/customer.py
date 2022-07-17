@@ -42,6 +42,12 @@ class CustomerRepository(BaseCustomerRepository):
 
         return customer
 
+    def update_customer(self, passport_number: str, data: dict):
+        self._storage.session.query(
+            Customer
+        ).filter_by(passport_number=passport_number).update(data)
+        self._storage.session.commit()
+
     def get_customer_by_passport_number(self, passport_number: str) -> Customer:
         return self._storage.session.query(
             Customer
