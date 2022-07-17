@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 
-class TestNewCustomer:
+class TestCustomerCreate:
     CUSTOMER_DATA = {
         'first_name': 'Ilya',
         'last_name': 'Auramenka',
@@ -151,3 +151,26 @@ class TestCustomerDelete:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'error' in response.json
         assert response.json['error'] == 'Customer does not exist!'
+
+
+class TestCustomerRetrieve:
+    CUSTOMER_DATA = {
+        'first_name': 'Ilya',
+        'last_name': 'Auramenka',
+        'email': 'avramneoko6@gmail.com',
+        'passport_number': 'HB2072131',
+        'bank_account': {
+            'currency': 'BYN'
+        }
+    }
+
+    def test_customer_retrieve(self, client, customer_repository):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+
+        response = client.get(f'/api/customers/{new_customer.json["uuid"]}')
+
+        assert response.status_code == HTTPStatus.OK
+        assert self.CUSTOMER_DATA['first_name'] == response.json['first_name']
+        assert self.CUSTOMER_DATA['last_name'] == response.json['last_name']
+        assert self.CUSTOMER_DATA['passport_number'] == response.json['passport_number']
+        assert self.CUSTOMER_DATA['email'] == response.json['email']

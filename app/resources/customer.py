@@ -2,7 +2,7 @@ from http import HTTPStatus
 from injector import inject
 from app.repositories.base import BaseCustomerRepository
 from flask_restful import Resource
-from app.schemas.customer import CustomerCreateSchema, CustomerUpdateSchema
+from app.schemas.customer import CustomerCreateSchema, CustomerUpdateSchema, CustomerRetrieveSchema
 from webargs.flaskparser import use_args
 from app.utils.response_serializer import serialize_response
 
@@ -31,3 +31,7 @@ class CustomerResource(Resource):
     @serialize_response(None, HTTPStatus.NO_CONTENT)
     def delete(self, uuid: str):
         self.repository.delete_customer(uuid)
+
+    @serialize_response(CustomerRetrieveSchema(), HTTPStatus.OK)
+    def get(self, uuid: str):
+        return self.repository.get_customer(uuid)

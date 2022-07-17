@@ -33,3 +33,7 @@ class CustomerCreateSchema(BaseCustomerSchema):
 
 class CustomerUpdateSchema(BaseCustomerSchema):
     pass
+
+
+class CustomerRetrieveSchema(BaseCustomerSchema):
+    pass
