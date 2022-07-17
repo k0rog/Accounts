@@ -6,7 +6,7 @@ class AppException(Exception):
     """Base exception to be caught"""
 
 
-class AlreadyExistsException(AppException):
+class AlreadyExistException(AppException):
     """Duplicate PK"""
 
 
@@ -14,11 +14,17 @@ class ValidationException(AppException):
     """Domain constraint violation"""
 
 
+class DoesNotExistException(AppException):
+    """Domain constraint violation"""
+
+
 def app_exception_handler(exception):
     http_code = 418
-    if isinstance(exception, AlreadyExistsException):
+    if isinstance(exception, AlreadyExistException):
         http_code = HTTPStatus.BAD_REQUEST
     elif isinstance(exception, ValidationException):
+        http_code = HTTPStatus.BAD_REQUEST
+    elif isinstance(exception, DoesNotExistException):
         http_code = HTTPStatus.BAD_REQUEST
     r = make_response(
         {'error': str(exception)}, http_code

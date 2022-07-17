@@ -20,13 +20,13 @@ class TestNewCustomer:
         assert customer_repository.check_customer(response.json['uuid'])
         assert customer_repository.has_bank_account(response.json['uuid'])
 
-    def test_duplicated_new_customer(self, client):
+    def test_duplicated_passport_number_new_customer(self, client):
         client.post('/api/customers/', json=self.CUSTOMER_DATA)
         response = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'error' in response.json
-        assert response.json['error'] == 'Customer already exists!'
+        assert response.json['error'] == 'Customer already exist!'
 
     def test_wrong_passport_number_format(self, client):
         wrong_data = self.CUSTOMER_DATA.copy()
@@ -124,3 +124,30 @@ class TestCustomerUpdate:
         )
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+class TestCustomerDelete:
+    CUSTOMER_DATA = {
+        'first_name': 'Ilya',
+        'last_name': 'Auramenka',
+        'email': 'avramneoko6@gmail.com',
+        'passport_number': 'HB2072131',
+        'bank_account': {
+            'currency': 'BYN'
+        }
+    }
+
+    def test_delete_customer(self, client, customer_repository):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+
+        response = client.delete(f'/api/customers/{new_customer.json["uuid"]}')
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert not customer_repository.check_customer(new_customer.json["uuid"])
+
+    def test_delete_nonexistent_customer(self, client, customer_repository):
+        response = client.delete(f'/api/customers/something')
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert 'error' in response.json
+        assert response.json['error'] == 'Customer does not exist!'

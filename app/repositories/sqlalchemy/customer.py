@@ -3,7 +3,7 @@ from injector import inject
 from app.repositories.base import BaseCustomerRepository
 from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import bank_accounts
-from app.exceptions import AlreadyExistsException
+from app.exceptions import AlreadyExistException, DoesNotExistException
 from app.repositories.base import BaseBankAccountRepository
 from sqlalchemy.exc import IntegrityError
 
@@ -35,7 +35,7 @@ class CustomerRepository(BaseCustomerRepository):
             self._storage.session.add(customer)
             self._storage.session.commit()
         except IntegrityError:
-            raise AlreadyExistsException('Customer already exists!')
+            raise AlreadyExistException('Customer already exist!')
 
         bank_account = self._bank_account_repository.create_bank_account(**data['bank_account'])
 
@@ -49,6 +49,19 @@ class CustomerRepository(BaseCustomerRepository):
         self._storage.session.query(
             Customer
         ).filter_by(uuid=uuid).update(data)
+        self._storage.session.commit()
+
+    def delete_customer(self, uuid: str):
+        """Deletes customer
+        We're forced to do check query to inform the user if the deletion had no effect"""
+
+        if not self.check_customer(uuid):
+            raise DoesNotExistException('Customer does not exist!')
+
+        self._storage.session.query(
+            Customer
+        ).filter_by(uuid=uuid).delete()
+
         self._storage.session.commit()
 
     def get_customer(self, uuid: str) -> Customer:

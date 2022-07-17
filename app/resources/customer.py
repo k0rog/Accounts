@@ -27,3 +27,7 @@ class CustomerResource(Resource):
     @serialize_response(None, HTTPStatus.NO_CONTENT)
     def patch(self, customer, uuid: str):
         self.repository.update_customer(uuid, customer)
+
+    @serialize_response(None, HTTPStatus.NO_CONTENT)
+    def delete(self, uuid: str):
+        self.repository.delete_customer(uuid)

@@ -8,6 +8,10 @@ class BaseCustomerRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def delete_customer(self, data: str):
+        raise NotImplementedError
+
+    @abstractmethod
     def update_customer(self, uuid: str, data: dict):
         raise NotImplementedError
 
