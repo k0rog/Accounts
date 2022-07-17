@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 
-class TestCustomerCreate:
+class BaseCustomerTestClass:
     CUSTOMER_DATA = {
         'first_name': 'Ilya',
         'last_name': 'Auramenka',
@@ -12,6 +12,8 @@ class TestCustomerCreate:
         }
     }
 
+
+class TestCustomerCreate(BaseCustomerTestClass):
     def test_new_customer(self, client, customer_repository, bank_account_repository):
         response = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
@@ -45,17 +47,7 @@ class TestCustomerCreate:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-class TestCustomerUpdate:
-    CUSTOMER_DATA = {
-        'first_name': 'Ilya',
-        'last_name': 'Auramenka',
-        'email': 'avramneoko6@gmail.com',
-        'passport_number': 'HB2072131',
-        'bank_account': {
-            'currency': 'BYN'
-        }
-    }
-
+class TestCustomerUpdate(BaseCustomerTestClass):
     def test_one_field_customer_update(self, client, customer_repository):
         new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
         update_data = {
@@ -98,11 +90,11 @@ class TestCustomerUpdate:
         assert updated_customer.email == update_data['email']
 
     def test_wrong_email_format(self, client):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+
         update_data = {
             'email': 'something@@@mail.com',
         }
-
-        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
         response = client.patch(
             f'/api/customers/{new_customer.json["uuid"]}',
@@ -112,11 +104,11 @@ class TestCustomerUpdate:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
     def test_wrong_passport_number_format(self, client):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+
         update_data = {
             'passport_number': 'HB212072131'
         }
-
-        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
         response = client.patch(
             f'/api/customers/{new_customer.json["uuid"]}',
@@ -126,17 +118,7 @@ class TestCustomerUpdate:
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-class TestCustomerDelete:
-    CUSTOMER_DATA = {
-        'first_name': 'Ilya',
-        'last_name': 'Auramenka',
-        'email': 'avramneoko6@gmail.com',
-        'passport_number': 'HB2072131',
-        'bank_account': {
-            'currency': 'BYN'
-        }
-    }
-
+class TestCustomerDelete(BaseCustomerTestClass):
     def test_delete_customer(self, client, customer_repository):
         new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
@@ -153,17 +135,7 @@ class TestCustomerDelete:
         assert response.json['error'] == 'Customer does not exist!'
 
 
-class TestCustomerRetrieve:
-    CUSTOMER_DATA = {
-        'first_name': 'Ilya',
-        'last_name': 'Auramenka',
-        'email': 'avramneoko6@gmail.com',
-        'passport_number': 'HB2072131',
-        'bank_account': {
-            'currency': 'BYN'
-        }
-    }
-
+class TestCustomerRetrieve(BaseCustomerTestClass):
     def test_customer_retrieve(self, client, customer_repository):
         new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
