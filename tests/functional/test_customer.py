@@ -31,6 +31,13 @@ class TestNewCustomer:
     def test_wrong_passport_number_format(self, client):
         wrong_data = self.CUSTOMER_DATA.copy()
         wrong_data['passport_number'] = '123'
+
+        response = client.post('/api/customers/', json=wrong_data)
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_wrong_email_format(self, client):
+        wrong_data = self.CUSTOMER_DATA.copy()
         wrong_data['email'] = 'some@@'
 
         response = client.post('/api/customers/', json=wrong_data)
