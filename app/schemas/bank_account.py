@@ -15,7 +15,7 @@ class BankAccountSchema(Schema):
 
     @validates('IBAN')
     def validate_iban(self, iban):
-        if re.match(r'[a-zA-Z]{2}[0-9a-zA-Z]{6}\d{20}', iban) is None:
+        if re.match(r'^[a-zA-Z]{2}[0-9a-zA-Z]{6}\d{20}$', iban) is None:
             raise ValidationError("Wrong iban format")
         return iban
 

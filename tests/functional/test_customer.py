@@ -80,6 +80,7 @@ class TestCustomerUpdate:
             'first_name': 'George',
             'last_name': 'Kitov',
             'email': 'something@mail.com',
+            'passport_number': 'HB2072131'
         }
 
         response = client.patch(
@@ -99,6 +100,20 @@ class TestCustomerUpdate:
     def test_wrong_email_format(self, client):
         update_data = {
             'email': 'something@@@mail.com',
+        }
+
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+
+        response = client.patch(
+            f'/api/customers/{new_customer.json["uuid"]}',
+            json=update_data
+        )
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def test_wrong_passport_number_format(self, client):
+        update_data = {
+            'passport_number': 'HB212072131'
         }
 
         new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)

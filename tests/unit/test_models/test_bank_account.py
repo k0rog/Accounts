@@ -9,4 +9,4 @@ def test_iban_generation():
         20
     )
 
-    assert re.match(r'[a-zA-Z]{2}[\da-zA-Z]{6}\d{20}', iban) is not None
+    assert re.match(r'^[a-zA-Z]{2}[\da-zA-Z]{6}\d{20}$', iban) is not None
