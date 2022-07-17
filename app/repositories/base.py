@@ -4,6 +4,10 @@ from abc import ABC, abstractmethod
 class BaseCustomerRepository(ABC):
 
     @abstractmethod
+    def check_customer(self, uuid: str):
+        raise NotImplementedError
+
+    @abstractmethod
     def create_customer(self, data: dict):
         raise NotImplementedError
 
