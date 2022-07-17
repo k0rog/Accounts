@@ -1,15 +1,16 @@
 import pytest
+
 from app.app import create_app
-from app.storage.sqlalchemy import db
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.repositories.sqlalchemy.customer import CustomerRepository
+from app.storage.sqlalchemy import db
 
 
 @pytest.fixture(scope='session')
 def app():
     app = create_app(dotenv_filename='.env.test')
     app.config.update({
-        "TESTING": True,
+        'TESTING': True,
     })
 
     yield app

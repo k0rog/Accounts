@@ -1,12 +1,13 @@
+from flask import Config, Flask
 from flask_migrate import Migrate
-from injector import Module, Binder, singleton
-from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from app.storage.sqlalchemy import configure_db
-from app.repositories.base import BaseBankAccountRepository, BaseCustomerRepository
-from app.repositories.sqlalchemy.customer import CustomerRepository
+from injector import Binder, Module, singleton
+
+from app.repositories.base import (BaseBankAccountRepository,
+                                   BaseCustomerRepository)
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
-from flask import Config
+from app.repositories.sqlalchemy.customer import CustomerRepository
+from app.storage.sqlalchemy import configure_db
 
 
 class SQLAlchemyModule(Module):
