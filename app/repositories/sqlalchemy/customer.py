@@ -1,8 +1,8 @@
-from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from app.repositories.base import BaseCustomerRepository
 from app.models.sqlalchemy.customer import Customer
+from app.models.sqlalchemy.many_to_many import bank_accounts
 from app.exceptions import AlreadyExistsException
 from app.repositories.base import BaseBankAccountRepository
 
@@ -12,11 +12,9 @@ class CustomerRepository(BaseCustomerRepository):
     def __init__(
             self,
             storage: SQLAlchemy,
-            config: Config,
             bank_account_repository: BaseBankAccountRepository
     ):
         self._storage = storage
-        self._config = config
         self._bank_account_repository = bank_account_repository
 
     def check_customer(self, passport_number: str) -> bool:
@@ -43,3 +41,13 @@ class CustomerRepository(BaseCustomerRepository):
         self._storage.session.commit()
 
         return customer
+
+    def get_customer_by_passport_number(self, passport_number: str) -> Customer:
+        return self._storage.session.query(
+            Customer
+        ).filter_by(passport_number=passport_number).first()
+
+    def has_bank_account(self, passport_number: str) -> bool:
+        return self._storage.session.query(
+            bank_accounts
+        ).filter_by(customer_id=passport_number).first() is not None

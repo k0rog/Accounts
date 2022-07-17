@@ -1,7 +1,6 @@
 from app.app import create_app
-from flask import current_app, jsonify
+from flask import current_app
 from flask_sqlalchemy import get_debug_queries
-from app.exceptions import AppException, app_exception_handler
 
 
 app = create_app()
@@ -23,20 +22,6 @@ def after_request(response):
                query.context))
     current_app.logger.info('------------------')
     return response
-
-
-@app.errorhandler(422)
-@app.errorhandler(400)
-def handle_error(err):
-    headers = err.data.get("headers", None)
-    messages = err.data.get("messages", ["Invalid request."])
-    if headers:
-        return jsonify({"errors": messages}), err.code, headers
-    else:
-        return jsonify({"errors": messages}), err.code
-
-
-app.errorhandler(AppException)(app_exception_handler)
 
 
 from app.storage.sqlalchemy import db

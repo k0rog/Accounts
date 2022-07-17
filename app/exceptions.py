@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from flask import make_response
+from flask import make_response, jsonify
 
 
 class AppException(Exception):
@@ -24,3 +24,12 @@ def app_exception_handler(exception):
         {'error': str(exception)}, http_code
     )
     return r
+
+
+def api_exception_handler(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    if headers:
+        return jsonify({"errors": messages}), err.code, headers
+    else:
+        return jsonify({"errors": messages}), err.code
