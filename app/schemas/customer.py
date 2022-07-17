@@ -3,20 +3,15 @@ import re
 from app.schemas.bank_account import BankAccountSchema
 
 
-class BaseCustomerSchema(Schema):
+class CustomerCreateSchema(Schema):
+    class Meta:
+        load_only = ('first_name', 'last_name', 'email', 'passport_number')
+
+    uuid = fields.String()
+    passport_number = fields.String(required=True)
     first_name = fields.String(required=True, validate=validate.Length(max=64))
     last_name = fields.String(required=True, validate=validate.Length(max=64))
     email = fields.String(required=True)
-
-    @validates('email')
-    def validate_email(self, email):
-        if re.match(r'[^@]+@[^@]+\.[^@]+', email) is None:
-            raise ValidationError("Not valid email address")
-        return email
-
-
-class CustomerCreateSchema(BaseCustomerSchema):
-    passport_number = fields.String(required=True, load_only=True)
     bank_account = fields.Nested(BankAccountSchema, required=True)
 
     @validates('passport_number')
@@ -25,6 +20,20 @@ class CustomerCreateSchema(BaseCustomerSchema):
             raise ValidationError("Not valid passport number")
         return passport_number[:2].upper() + passport_number[2:]
 
+    @validates('email')
+    def validate_email(self, email):
+        if re.match(r'[^@]+@[^@]+\.[^@]+', email) is None:
+            raise ValidationError("Not valid email address")
+        return email
 
-class CustomerUpdateSchema(BaseCustomerSchema):
+
+class CustomerUpdateSchema(Schema):
+    first_name = fields.String(validate=validate.Length(max=64))
+    last_name = fields.String(validate=validate.Length(max=64))
     email = fields.String()
+
+    @validates('email')
+    def validate_email(self, email):
+        if re.match(r'[^@]+@[^@]+\.[^@]+', email) is None:
+            raise ValidationError("Not valid email address")
+        return email

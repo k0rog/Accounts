@@ -4,19 +4,19 @@ from abc import ABC, abstractmethod
 class BaseCustomerRepository(ABC):
 
     @abstractmethod
-    def check_customer(self, passport_number: str) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
     def create_customer(self, data: dict):
         raise NotImplementedError
 
     @abstractmethod
-    def update_customer(self, passport_number: str, data: dict):
+    def update_customer(self, uuid: str, data: dict):
         raise NotImplementedError
 
     @abstractmethod
-    def has_bank_account(self, passport_number: str) -> bool:
+    def get_customer(self, uuid: str):
+        raise NotImplementedError
+
+    @abstractmethod
+    def has_bank_account(self, uuid: str) -> bool:
         raise NotImplementedError
 
 

@@ -13,9 +13,9 @@ class CustomersResource(Resource):
         self.repository = repository
 
     @use_args(CustomerCreateSchema())
-    @serialize_response(None, HTTPStatus.NO_CONTENT)
+    @serialize_response(CustomerCreateSchema(), HTTPStatus.CREATED)
     def post(self, customer):
-        self.repository.create_customer(customer)
+        return self.repository.create_customer(customer)
 
 
 class CustomerResource(Resource):
@@ -25,5 +25,5 @@ class CustomerResource(Resource):
 
     @use_args(CustomerUpdateSchema())
     @serialize_response(None, HTTPStatus.NO_CONTENT)
-    def patch(self, customer, passport_number: str):
-        self.repository.update_customer(passport_number, customer)
+    def patch(self, customer, uuid: str):
+        self.repository.update_customer(uuid, customer)

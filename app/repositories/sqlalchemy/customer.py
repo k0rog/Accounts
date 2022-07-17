@@ -5,6 +5,7 @@ from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import bank_accounts
 from app.exceptions import AlreadyExistsException
 from app.repositories.base import BaseBankAccountRepository
+from sqlalchemy.exc import IntegrityError
 
 
 class CustomerRepository(BaseCustomerRepository):
@@ -17,15 +18,12 @@ class CustomerRepository(BaseCustomerRepository):
         self._storage = storage
         self._bank_account_repository = bank_account_repository
 
-    def check_customer(self, passport_number: str) -> bool:
+    def check_customer(self, uuid: str) -> bool:
         return self._storage.session.query(
-            Customer.passport_number
-        ).filter_by(passport_number=passport_number).first() is not None
+            Customer.uuid
+        ).filter_by(uuid=uuid).first() is not None
 
     def create_customer(self, data: dict) -> Customer:
-        if self.check_customer(data['passport_number']):
-            raise AlreadyExistsException('Customer already exists!')
-
         customer = Customer(
             passport_number=data['passport_number'],
             first_name=data['first_name'],
@@ -33,27 +31,32 @@ class CustomerRepository(BaseCustomerRepository):
             email=data['email'],
         )
 
+        try:
+            self._storage.session.add(customer)
+            self._storage.session.commit()
+        except IntegrityError:
+            raise AlreadyExistsException('Customer already exists!')
+
         bank_account = self._bank_account_repository.create_bank_account(**data['bank_account'])
 
         customer.bank_accounts.append(bank_account)
 
-        self._storage.session.add(customer)
         self._storage.session.commit()
 
         return customer
 
-    def update_customer(self, passport_number: str, data: dict):
+    def update_customer(self, uuid: str, data: dict):
         self._storage.session.query(
             Customer
-        ).filter_by(passport_number=passport_number).update(data)
+        ).filter_by(uuid=uuid).update(data)
         self._storage.session.commit()
 
-    def get_customer_by_passport_number(self, passport_number: str) -> Customer:
+    def get_customer(self, uuid: str) -> Customer:
         return self._storage.session.query(
             Customer
-        ).filter_by(passport_number=passport_number).first()
+        ).filter_by(uuid=uuid).first()
 
-    def has_bank_account(self, passport_number: str) -> bool:
+    def has_bank_account(self, uuid: str) -> bool:
         return self._storage.session.query(
             bank_accounts
-        ).filter_by(customer_id=passport_number).first() is not None
+        ).filter_by(customer_id=uuid).first() is not None

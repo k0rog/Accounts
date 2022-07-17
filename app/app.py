@@ -17,7 +17,7 @@ def create_app(config_class: object = AppConfig, dotenv_filename: str = ''):
     app.config.from_object(update_config_class(dotenv_filename, config_class))
 
     api.add_resource(CustomersResource, '/api/customers/', endpoint='customers')
-    api.add_resource(CustomerResource, '/api/customers/<string:passport_number>', endpoint='customer')
+    api.add_resource(CustomerResource, '/api/customers/<string:uuid>', endpoint='customer')
     api.init_app(app)
 
     app.errorhandler(400)(api_exception_handler)
@@ -30,4 +30,4 @@ def create_app(config_class: object = AppConfig, dotenv_filename: str = ''):
     return app
 
 
-from app.models import sqlalchemy
+from app.models.sqlalchemy import customer, bank_account, bank_card, many_to_many

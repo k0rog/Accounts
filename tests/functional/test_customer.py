@@ -15,9 +15,10 @@ class TestNewCustomer:
     def test_new_customer(self, client, customer_repository, bank_account_repository):
         response = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
-        assert response.status_code == HTTPStatus.NO_CONTENT
-        assert customer_repository.check_customer(self.CUSTOMER_DATA['passport_number'])
-        assert customer_repository.has_bank_account(self.CUSTOMER_DATA['passport_number'])
+        assert response.status_code == HTTPStatus.CREATED
+        assert 'uuid' in response.json
+        assert customer_repository.check_customer(response.json['uuid'])
+        assert customer_repository.has_bank_account(response.json['uuid'])
 
     def test_duplicated_new_customer(self, client):
         client.post('/api/customers/', json=self.CUSTOMER_DATA)
@@ -55,20 +56,39 @@ class TestCustomerUpdate:
         }
     }
 
-    def test_customer_update(self, client, customer_repository):
-        client.post('/api/customers/', json=self.CUSTOMER_DATA)
+    def test_one_field_customer_update(self, client, customer_repository):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
+        update_data = {
+            'first_name': 'George',
+        }
+
+        response = client.patch(
+            f'/api/customers/{new_customer.json["uuid"]}',
+            json=update_data
+        )
+
+        updated_customer = customer_repository.get_customer(
+            new_customer.json['uuid']
+        )
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert updated_customer.first_name == update_data['first_name']
+
+    def test_full_customer_update(self, client, customer_repository):
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
         update_data = {
             'first_name': 'George',
             'last_name': 'Kitov',
             'email': 'something@mail.com',
         }
+
         response = client.patch(
-            f'/api/customers/{self.CUSTOMER_DATA["passport_number"]}',
+            f'/api/customers/{new_customer.json["uuid"]}',
             json=update_data
         )
 
-        updated_customer = customer_repository.get_customer_by_passport_number(
-            self.CUSTOMER_DATA['passport_number']
+        updated_customer = customer_repository.get_customer(
+            new_customer.json['uuid']
         )
 
         assert response.status_code == HTTPStatus.NO_CONTENT
@@ -81,10 +101,10 @@ class TestCustomerUpdate:
             'email': 'something@@@mail.com',
         }
 
-        client.post('/api/customers/', json=self.CUSTOMER_DATA)
+        new_customer = client.post('/api/customers/', json=self.CUSTOMER_DATA)
 
         response = client.patch(
-            f'/api/customers/{self.CUSTOMER_DATA["passport_number"]}',
+            f'/api/customers/{new_customer.json["uuid"]}',
             json=update_data
         )
 

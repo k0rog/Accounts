@@ -6,6 +6,9 @@ ALLOWED_CURRENCY_LIST = ['BYN', 'EUR', 'USD']
 
 
 class BankAccountSchema(Schema):
+    class Meta:
+        load_only = ('currency',)
+
     IBAN = fields.String()
     currency = fields.String(required=True)
     balance = fields.Float()
