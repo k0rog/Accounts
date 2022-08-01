@@ -4,3 +4,5 @@
 .env
 .flaskenv
 .env.docker
+.env.test
+*.pytest_cache/
