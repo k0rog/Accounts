@@ -1,12 +1,11 @@
 from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
-from app.repositories.base import BaseBankAccountRepository
 from app.models.sqlalchemy.bank_account import BankAccount
 from sqlalchemy.exc import IntegrityError
 
 
-class BankAccountRepository(BaseBankAccountRepository):
+class BankAccountRepository:
     @inject
     def __init__(
             self,

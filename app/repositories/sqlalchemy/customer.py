@@ -1,24 +1,23 @@
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
-from app.repositories.base import BaseCustomerRepository
 from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import bank_accounts
 from app.exceptions import AlreadyExistException, DoesNotExistException
-from app.repositories.base import BaseBankAccountRepository
+from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from sqlalchemy.exc import IntegrityError
 
 
-class CustomerRepository(BaseCustomerRepository):
+class CustomerRepository:
     @inject
     def __init__(
-            self,
-            storage: SQLAlchemy,
-            bank_account_repository: BaseBankAccountRepository
+        self,
+        storage: SQLAlchemy,
+        bank_account_repository: BankAccountRepository
     ):
         self._storage = storage
         self._bank_account_repository = bank_account_repository
 
-    def check_customer(self, uuid: str) -> bool:
+    def is_customer_exists(self, uuid: str) -> bool:
         return self._storage.session.query(
             Customer.uuid
         ).filter_by(uuid=uuid).first() is not None
@@ -55,7 +54,7 @@ class CustomerRepository(BaseCustomerRepository):
         """Deletes customer
         We're forced to do check query to inform the user if the deletion had no effect"""
 
-        if not self.check_customer(uuid):
+        if not self.is_customer_exists(uuid):
             raise DoesNotExistException('Customer does not exist!')
 
         self._storage.session.query(

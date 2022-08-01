@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from injector import inject
-from app.repositories.base import BaseCustomerRepository
+from app.repositories.sqlalchemy.customer import CustomerRepository
 from flask_restful import Resource
 from app.schemas.customer import CustomerCreateSchema, CustomerUpdateSchema, CustomerRetrieveSchema
 from webargs.flaskparser import use_args
@@ -9,7 +9,7 @@ from app.utils.response_serializer import serialize_response
 
 class CustomersResource(Resource):
     @inject
-    def __init__(self, repository: BaseCustomerRepository):
+    def __init__(self, repository: CustomerRepository):
         self.repository = repository
 
     @use_args(CustomerCreateSchema())
@@ -20,7 +20,7 @@ class CustomersResource(Resource):
 
 class CustomerResource(Resource):
     @inject
-    def __init__(self, repository: BaseCustomerRepository):
+    def __init__(self, repository: CustomerRepository):
         self.repository = repository
 
     @use_args(CustomerUpdateSchema())
