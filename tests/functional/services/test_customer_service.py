@@ -1,15 +1,15 @@
 import pytest
 
-from app.exceptions import ValidationException, AlreadyExistException, DoesNotExistException
+from app.exceptions import AlreadyExistException, DoesNotExistException
 from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import bank_accounts
 
 
 CUSTOMER_DATA = {
-    'first_name': 'Ilya',
-    'last_name': 'Auramenka',
-    'email': 'avramneoko6@gmail.com',
-    'passport_number': 'HB2072131',
+    'first_name': 'John',
+    'last_name': 'Smith',
+    'email': 'jsmit@gmail.com',
+    'passport_number': 'HB1111111',
     'bank_account': {
         'currency': 'BYN'
     }
@@ -20,18 +20,18 @@ class TestCreate:
     def test_is_uuid_returned(self, customer_service):
         customer = customer_service.create_customer(CUSTOMER_DATA)
 
-        assert 'uuid' in customer
+        assert hasattr('uuid', customer)
 
     def test_customer_creation(self, customer_service, storage):
         customer = customer_service.create_customer(CUSTOMER_DATA)
 
         storage_customer = storage.session.query(
             Customer.uuid
-        ).filter_by(uuid=customer['uuid']).first()
+        ).filter_by(uuid=customer.uuid).first()
 
         storage_bank_account = storage.session.query(
             bank_accounts
-        ).filter_by(customer_id=customer['uuid']).first()
+        ).filter_by(customer_id=customer.uuid).first()
 
         assert storage_customer is not None
         assert storage_bank_account is not None
@@ -58,7 +58,7 @@ class TestUpdate:
         new_customer = customer_service.create_customer(CUSTOMER_DATA)
 
         update_data = {
-            'passport_number': 'HB212072131'
+            'passport_number': 'HB1111112'
         }
 
         customer_service.update_customer(new_customer['uuid'], update_data)
@@ -73,9 +73,9 @@ class TestUpdate:
         new_customer = customer_service.create_customer(CUSTOMER_DATA)
 
         update_data = {
-            'passport_number': 'HB212072131',
-            'first_name': 'George',
-            'last_name': 'kitov'
+            'passport_number': 'HB1111112',
+            'first_name': 'Jack',
+            'last_name': 'Miller'
         }
 
         customer_service.update_customer(new_customer['uuid'], update_data)
@@ -88,29 +88,22 @@ class TestUpdate:
         assert customer.first_name == update_data['first_name']
         assert customer.last_name == update_data['last_name']
 
-    def test_with_wrong_passport_number_format(self, customer_service):
-        new_customer = customer_service.create_customer(CUSTOMER_DATA)
+    def test_passport_update_to_already_existent(self, customer_service):
+        customer_service.create_customer(CUSTOMER_DATA)
+
+        second_customer_data = CUSTOMER_DATA.copy()
+        second_customer_data.update({'passport_number': 'HB1111112'})
+
+        second_customer = customer_service.create_customer(second_customer_data)
 
         update_data = {
-            'passport_number': 'WRONGNUMBER',
+            'passport_number': 'HB1111111'
         }
 
-        with pytest.raises(ValidationException) as exception_info:
-            customer_service.update_customer(new_customer['uuid'], update_data)
+        with pytest.raises(AlreadyExistException) as exception_info:
+            customer_service.update(second_customer.uuid, update_data)
 
-        assert exception_info.value.message == 'Wrong format for passport_number field!'
-
-    def test_with_wrong_email_format(self, customer_service):
-        new_customer = customer_service.create_customer(CUSTOMER_DATA)
-
-        update_data = {
-            'email': 'WRONGEMAIL',
-        }
-
-        with pytest.raises(ValidationException) as exception_info:
-            customer_service.update_customer(new_customer['uuid'], update_data)
-
-        assert exception_info.value.message == 'Wrong format for email field!'
+        assert exception_info.value.message == 'Customer already exist!'
 
 
 class TestDelete:
