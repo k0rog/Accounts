@@ -3,6 +3,7 @@ import pytest
 from app.app import create_app
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.repositories.sqlalchemy.customer import CustomerRepository
+from app.repositories.sqlalchemy.bank_card import BankCardRepository
 from app.storage.sqlalchemy import db
 
 
@@ -37,9 +38,9 @@ def client(app, storage):
 
 
 @pytest.fixture(scope='function')
-def bank_account_repository(app):
+def bank_account_repository(app, storage):
     repository = BankAccountRepository(
-        storage=db,
+        storage=storage,
         config=app.config
     )
 
@@ -47,10 +48,19 @@ def bank_account_repository(app):
 
 
 @pytest.fixture(scope='function')
-def customer_repository(bank_account_repository):
+def customer_repository(bank_account_repository, storage):
     repository = CustomerRepository(
-        storage=db,
+        storage=storage,
         bank_account_repository=bank_account_repository
+    )
+
+    yield repository
+
+
+@pytest.fixture(scope='function')
+def bank_card_repository(storage):
+    repository = BankCardRepository(
+        storage=storage,
     )
 
     yield repository

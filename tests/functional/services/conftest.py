@@ -1,8 +1,11 @@
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from app.services.customer import CustomerService
 from app.services.bank_account import BankAccountService
+from app.services.bank_card import BankCardService
 from app.models.sqlalchemy.customer import Customer
+from app.models.sqlalchemy.bank_account import BankAccount
 from app.models.sqlalchemy.bank_card import BankCard
 
 
@@ -26,6 +29,15 @@ def bank_account_service(storage, bank_account_repository):
 
 
 @pytest.fixture(scope='function')
+def bank_card_service(storage, bank_card_repository):
+    bank_card_service = BankCardService(
+        bank_card_repository=bank_card_repository
+    )
+
+    yield bank_card_service
+
+
+@pytest.fixture(scope='function')
 def customer(storage):
     customer = Customer(
         first_name='John',
@@ -38,6 +50,32 @@ def customer(storage):
     storage.session.commit()
 
     yield customer
+
+
+@pytest.fixture(scope='function')
+def bank_account(storage):
+    while True:
+        try:
+            iban = BankAccount.generate_iban(
+                'BY',
+                'JPCB',
+                20
+            )
+
+            bank_account = BankAccount(
+                IBAN=iban,
+                currency='BYN',
+            )
+
+            storage.session.add(bank_account)
+            storage.session.commit()
+
+            break
+        except IntegrityError:
+            '''There's very small chance to generate duplicated IBAN
+            But since this chance still exists, we have to repeat the operation'''
+
+    yield bank_account
 
 
 @pytest.fixture(scope='function')
