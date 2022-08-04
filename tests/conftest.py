@@ -48,10 +48,9 @@ def bank_account_repository(app, storage):
 
 
 @pytest.fixture(scope='function')
-def customer_repository(bank_account_repository, storage):
+def customer_repository(storage):
     repository = CustomerRepository(
         storage=storage,
-        bank_account_repository=bank_account_repository
     )
 
     yield repository

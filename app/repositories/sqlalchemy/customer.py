@@ -3,7 +3,6 @@ from injector import inject
 from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import bank_accounts
 from app.exceptions import AlreadyExistException, DoesNotExistException
-from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from sqlalchemy.exc import IntegrityError
 
 
@@ -12,10 +11,8 @@ class CustomerRepository:
     def __init__(
         self,
         storage: SQLAlchemy,
-        bank_account_repository: BankAccountRepository
     ):
         self._storage = storage
-        self._bank_account_repository = bank_account_repository
 
     def is_exists(self, uuid: str) -> bool:
         return self._storage.session.query(
