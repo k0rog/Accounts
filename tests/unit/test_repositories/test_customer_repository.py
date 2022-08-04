@@ -30,7 +30,7 @@ class TestCreate:
         assert storage_customer.email == CUSTOMER_DATA['email']
         assert storage_customer.passport_number == CUSTOMER_DATA['passport_number']
 
-    def test_for_duplicated_customer(self, customer_repository):
+    def test_for_duplicated_passport_number(self, customer_repository):
         customer_repository.create(CUSTOMER_DATA)
 
         with pytest.raises(AlreadyExistException) as exception_info:

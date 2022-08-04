@@ -1,3 +1,5 @@
+from typing import Union
+
 from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
@@ -43,3 +45,21 @@ class BankAccountRepository:
         self._storage.session.commit()
 
         return bank_account
+
+    def get_by_iban(self, iban: str) -> BankAccount:
+        raise NotImplementedError
+
+    def get_owned_by_customer(self, customer_uuid) -> list[BankAccount]:
+        raise NotImplementedError
+
+    def delete(self, iban: str) -> None:
+        raise NotImplementedError
+
+    def batch_delete(self, ibans: list[str]) -> None:
+        raise NotImplementedError
+
+    def assign_to_customer(self, iban: str, customer_uuid: str) -> None:
+        raise NotImplementedError
+
+    def update_balance_by_amount(self, iban: str, amount: Union[int, float]) -> None:
+        raise NotImplementedError

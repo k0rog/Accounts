@@ -38,7 +38,7 @@ def client(app, storage):
 
 
 @pytest.fixture(scope='function')
-def bank_account_repository(app, storage):
+def bank_account_repository(app, storage) -> BankAccountRepository:
     repository = BankAccountRepository(
         storage=storage,
         config=app.config
@@ -48,7 +48,7 @@ def bank_account_repository(app, storage):
 
 
 @pytest.fixture(scope='function')
-def customer_repository(storage):
+def customer_repository(storage) -> CustomerRepository:
     repository = CustomerRepository(
         storage=storage,
     )
@@ -57,7 +57,7 @@ def customer_repository(storage):
 
 
 @pytest.fixture(scope='function')
-def bank_card_repository(storage):
+def bank_card_repository(storage) -> BankCardRepository:
     repository = BankCardRepository(
         storage=storage,
     )
