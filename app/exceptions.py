@@ -5,6 +5,11 @@ from flask import jsonify, make_response
 
 class AppException(Exception):
     """Base exception to be caught"""
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 class AlreadyExistException(AppException):

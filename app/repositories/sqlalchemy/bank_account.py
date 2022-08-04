@@ -1,8 +1,10 @@
 from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
-from app.models.sqlalchemy.bank_account import BankAccount
 from sqlalchemy.exc import IntegrityError
+
+from app.models.sqlalchemy.bank_account import BankAccount
+from app.models.sqlalchemy.many_to_many import bank_accounts
 
 
 class BankAccountRepository:
@@ -15,30 +17,29 @@ class BankAccountRepository:
         self._storage = storage
         self._config = config
 
-    def create_bank_account(self, currency: str, balance: float = 0.0):
+    def create(self, data: dict, customer_uuid: str):
         while True:
             try:
-                iban = self._get_unique_iban()
-
                 bank_account = BankAccount(
-                    IBAN=iban,
-                    currency=currency,
-                    balance=balance,
+                    currency=data['currency'],
+                    balance=data['balance'] if 'balance' in data else 0.0,
                 )
 
                 self._storage.session.add(bank_account)
-                self._storage.session.commit()
+                self._storage.session.flush()
 
                 break
             except IntegrityError:
                 '''There's very small chance to generate duplicated IBAN
                 But since this chance still exists, we have to repeat the operation'''
+                self._storage.session.rollback()
+
+        insert_statement = bank_accounts.insert().values(
+            customer_id=customer_uuid,
+            bank_account_id=bank_account.IBAN
+        )
+
+        self._storage.session.execute(insert_statement)
+        self._storage.session.commit()
 
         return bank_account
-
-    def _get_unique_iban(self):
-        return BankAccount.generate_iban(
-            self._config['IBAN_COUNTRY_IDENTIFIER'],
-            self._config['IBAN_BANK_IDENTIFIER'],
-            int(self._config['IBAN_BBAN_LENGTH'])
-        )

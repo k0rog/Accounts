@@ -13,13 +13,19 @@ class CustomerService:
         self._bank_account_repository = bank_account_repository
 
     def create(self, data: dict) -> Customer:
-        raise NotImplementedError
+        """Creates customer and bank account for him.
+        Customer can't exist without bank account due to domain constraints"""
+        customer = self._customer_repository.create(data)
+
+        self._bank_account_repository.create(data['bank_account'], customer.uuid)
+
+        return customer
 
     def delete(self, uuid: str) -> None:
-        raise NotImplementedError
+        self._customer_repository.delete(uuid)
 
     def update(self, uuid: str, data: dict) -> None:
-        raise NotImplementedError
+        self._customer_repository.update(uuid, data)
 
     def get_by_uuid(self, uuid: str) -> Customer:
-        raise NotImplementedError
+        return self._customer_repository.get_by_uuid(uuid)
