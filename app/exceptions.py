@@ -24,6 +24,10 @@ class DoesNotExistException(AppException):
     """Domain constraint violation"""
 
 
+class AccessDeniedException(AppException):
+    """Attempt to modify constant data"""
+
+
 def app_exception_handler(exception):
     http_code = 418
     if isinstance(exception, AlreadyExistException):

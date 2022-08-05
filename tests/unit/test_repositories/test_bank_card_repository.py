@@ -1,4 +1,4 @@
-import hashlib
+from datetime import date
 
 import pytest
 
@@ -7,7 +7,7 @@ from app.models.sqlalchemy.bank_card import BankCard
 
 
 BANK_CARD_DATA = {
-    'expiration_date': '2025-05-05',
+    'expiration_date': date(2025, 5, 5),
 }
 
 MockIBAN = 'MockIBAN'
@@ -27,8 +27,8 @@ class TestCreate:
         assert storage_bank_card is not None
 
         assert storage_bank_card.expiration_date == BANK_CARD_DATA['expiration_date']
-        assert storage_bank_card._cvv_hash == hashlib.sha256(cvv.encode('utf-8')).hexdigest()
-        assert storage_bank_card._pin_hash == hashlib.sha256(pin.encode('utf-8')).hexdigest()
+        assert bank_card.check_cvv(cvv)
+        assert bank_card.check_pin(pin)
         assert storage_bank_card.bank_account_iban == MockIBAN
 
 
@@ -81,22 +81,23 @@ class TestDelete:
     def test_delete(self, bank_card_repository):
         bank_card, _, _ = bank_card_repository.create(BANK_CARD_DATA, MockIBAN)
 
-        bank_card_repository.delete(bank_card.card_number)
+        is_deleted = bank_card_repository.delete(bank_card.card_number)
+
+        assert is_deleted
 
         assert BankCard.query.filter_by(card_number=bank_card.card_number).first() is None
 
     def test_for_nonexistent_bank_card(self, bank_card_repository):
-        with pytest.raises(DoesNotExistException) as exception_info:
-            bank_card_repository.delete('NonexistentCardNumber')
+        is_deleted = bank_card_repository.delete('NonexistentBankCard')
 
-        assert exception_info.value.message == 'BankCard does not exist!'
+        assert not is_deleted
 
 
-class TestBatchDelete:
+class TestBulkDelete:
     def test_for_one_bank_card(self, bank_card_repository):
         bank_card, _, _ = bank_card_repository.create(BANK_CARD_DATA, MockIBAN)
 
-        bank_card_repository.batch_delete([bank_card.card_number])
+        bank_card_repository.bulk_delete([bank_card.card_number])
 
         assert BankCard.query.filter_by(card_number=bank_card.card_number).first() is None
 
@@ -104,7 +105,7 @@ class TestBatchDelete:
         first_bank_card, _, _ = bank_card_repository.create(BANK_CARD_DATA, MockIBAN)
         second_bank_card, _, _ = bank_card_repository.create(BANK_CARD_DATA, MockIBAN)
 
-        bank_card_repository.batch_delete([first_bank_card.card_number, second_bank_card.card_number])
+        bank_card_repository.bulk_delete([first_bank_card.card_number, second_bank_card.card_number])
 
         assert BankCard.query.filter_by(card_number=first_bank_card.card_number).first() is None
         assert BankCard.query.filter_by(card_number=second_bank_card.card_number).first() is None

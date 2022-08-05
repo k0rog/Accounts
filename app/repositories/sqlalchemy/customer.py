@@ -49,7 +49,7 @@ class CustomerRepository:
 
     def delete(self, uuid: str):
         """Deletes customer
-        We're forced to do check query to inform the user if the deletion had no effect"""
+        We're forced to perform check query to inform the user if the deletion had no effect"""
 
         if not self.is_exists(uuid):
             raise DoesNotExistException('Customer does not exist!')
