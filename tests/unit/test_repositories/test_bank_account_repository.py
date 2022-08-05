@@ -129,7 +129,7 @@ class TestGetBankAccountsOwnedByCustomer:
 
         assert bank_account.IBAN in bank_account_list
 
-    def test_for_many_bank_accounts(self, bank_account_repository, customer):
+    def test_for_many_bank_accounts(self, bank_account_repository):
         first_bank_account = bank_account_repository.create(BANK_ACCOUNT_DATA, MockUUID)
         second_bank_account = bank_account_repository.create(BANK_ACCOUNT_DATA, MockUUID)
 
