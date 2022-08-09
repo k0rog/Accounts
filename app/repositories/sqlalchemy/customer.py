@@ -47,18 +47,14 @@ class CustomerRepository:
             self._storage.session.rollback()
             raise AlreadyExistException('Customer already exist!')
 
-    def delete(self, uuid: str):
-        """Deletes customer
-        We're forced to perform check query to inform the user if the deletion had no effect"""
-
-        if not self.is_exists(uuid):
-            raise DoesNotExistException('Customer does not exist!')
-
-        self._storage.session.query(
+    def delete(self, uuid: str) -> bool:
+        is_deleted = self._storage.session.query(
             Customer
         ).filter_by(uuid=uuid).delete()
 
         self._storage.session.commit()
+
+        return is_deleted
 
     def get_by_uuid(self, uuid: str) -> Customer:
         customer = self._storage.session.query(

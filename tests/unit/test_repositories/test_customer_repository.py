@@ -106,17 +106,18 @@ class TestDelete:
     def test_delete(self, customer_repository, storage):
         customer = customer_repository.create(CUSTOMER_DATA)
 
-        customer_repository.delete(customer.uuid)
+        is_deleted = customer_repository.delete(customer.uuid)
+
+        assert is_deleted
 
         assert storage.session.query(
             Customer
         ).filter_by(uuid=customer.uuid).first() is None
 
     def test_for_nonexistent_customer(self, customer_repository):
-        with pytest.raises(DoesNotExistException) as exception_info:
-            customer_repository.delete('NonexistentUUID')
+        is_deleted = customer_repository.delete('NonexistentUUID')
 
-        assert exception_info.value.message == 'Customer does not exist!'
+        assert not is_deleted
 
 
 class TestGetByUUID:

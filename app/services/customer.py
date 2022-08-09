@@ -1,3 +1,4 @@
+from app.exceptions import DoesNotExistException
 from app.repositories.sqlalchemy.customer import CustomerRepository
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.models.sqlalchemy.customer import Customer
@@ -22,7 +23,10 @@ class CustomerService:
         return customer
 
     def delete(self, uuid: str) -> None:
-        self._customer_repository.delete(uuid)
+        is_deleted = self._customer_repository.delete(uuid)
+
+        if not is_deleted:
+            raise DoesNotExistException('Customer does not exist!')
 
     def update(self, uuid: str, data: dict) -> None:
         self._customer_repository.update(uuid, data)
