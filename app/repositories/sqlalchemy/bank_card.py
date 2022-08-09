@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from sqlalchemy.exc import IntegrityError
+from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 
 from app.exceptions import DoesNotExistException
 from app.models.sqlalchemy.bank_card import BankCard
@@ -26,10 +27,18 @@ class BankCardRepository:
                 self._storage.session.commit()
 
                 break
-            except IntegrityError:
-                '''There's very small chance to generate duplicated card_number
-                But since this chance still exists, we have to repeat the operation'''
+            except IntegrityError as e:
                 self._storage.session.rollback()
+
+                if isinstance(e.orig, ForeignKeyViolation):
+                    raise DoesNotExistException('BankAccount does not exist!')
+
+                if isinstance(e.orig, UniqueViolation):
+                    '''There's very small chance to generate duplicated card_number
+                    But since this chance still exists, we have to repeat the operation'''
+                    continue
+
+                raise e
 
         cvv = BankCard.generate_cvv()
         pin = BankCard.generate_pin()

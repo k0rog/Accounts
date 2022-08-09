@@ -1,4 +1,5 @@
-import hashlib
+from datetime import date
+
 import pytest
 
 from app.exceptions import DoesNotExistException
@@ -6,9 +7,7 @@ from app.models.sqlalchemy.bank_card import BankCard
 
 
 BANK_CARD_DATA = {
-    'card_number': '4422553366447755',
-    'expiration_date': '2025-05-05',
-    'cvv': '111'
+    'expiration_date': date(2025, 5, 5),
 }
 
 
@@ -17,14 +16,16 @@ class TestCreate:
         bank_card, pin, cvv = bank_card_service.create(BANK_CARD_DATA, bank_account.IBAN)
 
         storage_bank_card = storage.session.query(
-            BankCard.card_number
+            BankCard
         ).filter_by(card_number=bank_card.card_number).first()
 
         assert storage_bank_card is not None
 
         assert storage_bank_card.expiration_date == BANK_CARD_DATA['expiration_date']
-        assert storage_bank_card._cvv_hash == hashlib.sha256(cvv.encode('utf-8')).hexdigest()
-        assert storage_bank_card._pin_hash == hashlib.sha256(pin.encode('utf-8')).hexdigest()
+        assert storage_bank_card._cvv_hash == bank_card._cvv_hash
+        assert storage_bank_card._pin_hash == bank_card._pin_hash
+        assert bank_card.check_cvv(cvv)
+        assert bank_card.check_pin(pin)
         assert storage_bank_card.bank_account_iban == bank_account.IBAN
 
     def test_with_nonexistent_bank_account(self, bank_card_service):
@@ -93,8 +94,8 @@ class TestGetByCardNumber:
         assert retrieved_bank_card._cvv_hash == storage_bank_card._cvv_hash
         assert retrieved_bank_card._pin_hash == storage_bank_card._pin_hash
 
-        assert retrieved_bank_card._cvv_hash == hashlib.sha256(cvv.encode('utf-8')).hexdigest()
-        assert retrieved_bank_card._pin_hash == hashlib.sha256(pin.encode('utf-8')).hexdigest()
+        assert bank_card.check_cvv(cvv)
+        assert bank_card.check_pin(pin)
 
     def test_retrieve_nonexistent_bank_card(self, bank_card_service):
         with pytest.raises(DoesNotExistException) as exception_info:
