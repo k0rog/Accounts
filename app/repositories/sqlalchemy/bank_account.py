@@ -4,6 +4,7 @@ from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from sqlalchemy.exc import IntegrityError, DataError
+from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 
 from app.exceptions import DoesNotExistException, AlreadyExistException
 from app.models.sqlalchemy.bank_account import BankAccount
@@ -94,9 +95,16 @@ class BankAccountRepository:
             self._storage.session.add(association_row)
             self._storage.session.flush()
 
-        except IntegrityError:
+        except IntegrityError as e:
             self._storage.session.rollback()
-            raise AlreadyExistException('Relation already exist!')
+
+            if isinstance(e.orig, ForeignKeyViolation):
+                raise DoesNotExistException('BankAccount does not exist!')
+
+            if isinstance(e.orig, UniqueViolation):
+                raise AlreadyExistException('Relation already exist!')
+
+            raise e
 
         self._storage.session.commit()
 

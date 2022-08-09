@@ -34,7 +34,7 @@ class BankCard(db.Model):
     _pin_hash = db.Column(db.String(256))
     _cvv_hash = db.Column(db.String(256))
 
-    bank_account_iban = db.Column(db.String, db.ForeignKey('bank_account.IBAN'))
+    bank_account_iban = db.Column(db.String, db.ForeignKey('bank_account.IBAN', ondelete='CASCADE'))
     bank_account = db.relationship('BankAccount',
                                    backref=db.backref('cards', lazy=True))
 

@@ -201,10 +201,16 @@ class TestAssignToCustomer:
             AssociationBankAccountCustomer
         ).filter_by(bank_account_id=bank_account.IBAN, customer_id=MockUUID2).first() is not None
 
-    def test_duplicated_assign(self, bank_account_repository, storage):
+    def test_duplicated_assign(self, bank_account_repository):
         bank_account = bank_account_repository.create(BANK_ACCOUNT_DATA, MockUUID)
 
         with pytest.raises(AlreadyExistException) as exception_info:
             bank_account_repository.assign_to_customer(bank_account.IBAN, MockUUID)
 
         assert exception_info.value.message == 'Relation already exist!'
+
+    def test_assign_nonexistent_bank_account(self, bank_account_repository):
+        with pytest.raises(DoesNotExistException) as exception_info:
+            bank_account_repository.assign_to_customer('NonexistentIBAN', MockUUID2)
+
+        assert exception_info.value.message == 'BankAccount does not exist!'

@@ -2,6 +2,7 @@ from typing import Union
 
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.models.sqlalchemy.bank_account import BankAccount
+from app.exceptions import DoesNotExistException
 
 
 class BankAccountService:
@@ -12,19 +13,26 @@ class BankAccountService:
         self._bank_account_repository = bank_account_repository
 
     def create(self, data: dict, customer_uuid: str) -> BankAccount:
-        raise NotImplementedError
+        return self._bank_account_repository.create(data, customer_uuid)
 
     def update_balance_by_amount(self, iban: str, amount: Union[float, int]) -> None:
-        raise NotImplementedError
+        self._bank_account_repository.update_balance_by_amount(iban, amount)
 
     def delete(self, iban: str) -> None:
-        raise NotImplementedError
+        is_deleted = self._bank_account_repository.delete(iban)
 
-    def add_bank_account_for_customer(self, customer_uuid, iban):
-        raise NotImplementedError
+        if not is_deleted:
+            raise DoesNotExistException('BankAccount does not exist!')
+
+    def add_bank_account_for_customer(self, iban: str, customer_uuid: str):
+        self._bank_account_repository.assign_to_customer(iban, customer_uuid)
 
     def delete_owned_by_customer_bank_accounts(self, customer_uuid: str):
-        raise NotImplementedError
+        bank_accounts = self._bank_account_repository.get_owned_by_customer(customer_uuid)
+
+        self._bank_account_repository.bulk_delete([
+            bank_account.IBAN for bank_account in bank_accounts
+        ])
 
     def get_by_iban(self, iban: str) -> BankAccount:
-        raise NotImplementedError
+        return self._bank_account_repository.get_by_iban(iban)

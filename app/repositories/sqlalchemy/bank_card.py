@@ -23,7 +23,7 @@ class BankCardRepository:
                 )
 
                 self._storage.session.add(bank_card)
-                self._storage.session.flush()
+                self._storage.session.commit()
 
                 break
             except IntegrityError:
