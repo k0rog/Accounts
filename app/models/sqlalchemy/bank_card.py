@@ -25,6 +25,9 @@ def generate_card_number():
 class BankCard(db.Model):
     __tablename__ = 'bank_card'
 
+    def __eq__(self, other):
+        return self.card_number == other
+
     card_number = db.Column(db.String(16), primary_key=True, default=generate_card_number)
     expiration_date = db.Column(db.Date(), nullable=False)
 

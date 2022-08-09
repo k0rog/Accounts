@@ -3,10 +3,11 @@ from typing import Union
 from flask import Config
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DataError
 
+from app.exceptions import DoesNotExistException, AlreadyExistException
 from app.models.sqlalchemy.bank_account import BankAccount
-from app.models.sqlalchemy.many_to_many import bank_accounts
+from app.models.sqlalchemy.many_to_many import AssociationBankAccountCustomer
 
 
 class BankAccountRepository:
@@ -28,38 +29,84 @@ class BankAccountRepository:
                 )
 
                 self._storage.session.add(bank_account)
-                self._storage.session.flush()
+                self._storage.session.commit()
 
                 break
             except IntegrityError:
                 '''There's very small chance to generate duplicated IBAN
                 But since this chance still exists, we have to repeat the operation'''
                 self._storage.session.rollback()
+            except DataError:
+                self._storage.session.rollback()
+                raise DoesNotExistException('Currency does not exist!')
 
-        insert_statement = bank_accounts.insert().values(
-            customer_id=customer_uuid,
-            bank_account_id=bank_account.IBAN
+        association_row = AssociationBankAccountCustomer(
+            bank_account_id=bank_account.IBAN,
+            customer_id=customer_uuid
         )
 
-        self._storage.session.execute(insert_statement)
+        self._storage.session.add(association_row)
         self._storage.session.commit()
 
         return bank_account
 
     def get_by_iban(self, iban: str) -> BankAccount:
-        raise NotImplementedError
+        bank_account = self._storage.session.query(
+            BankAccount
+        ).filter_by(IBAN=iban).first()
+
+        if not bank_account:
+            raise DoesNotExistException('BankAccount does not exist!')
+
+        return bank_account
 
     def get_owned_by_customer(self, customer_uuid) -> list[BankAccount]:
-        raise NotImplementedError
+        return self._storage.session \
+            .query(BankAccount) \
+            .join(AssociationBankAccountCustomer) \
+            .filter(AssociationBankAccountCustomer.customer_id == customer_uuid).all()
 
-    def delete(self, iban: str) -> None:
-        raise NotImplementedError
+    def delete(self, iban: str) -> bool:
+        is_deleted = self._storage.session.query(
+            BankAccount
+        ).filter_by(IBAN=iban).delete()
 
-    def batch_delete(self, ibans: list[str]) -> None:
-        raise NotImplementedError
+        self._storage.session.commit()
+
+        return is_deleted
+
+    def bulk_delete(self, ibans: list[str]) -> None:
+        is_deleted = self._storage.session.query(
+            BankAccount
+        ).filter(BankAccount.IBAN.in_(ibans)).delete()
+
+        self._storage.session.commit()
+
+        return is_deleted
 
     def assign_to_customer(self, iban: str, customer_uuid: str) -> None:
-        raise NotImplementedError
+        try:
+            association_row = AssociationBankAccountCustomer(
+                bank_account_id=iban,
+                customer_id=customer_uuid
+            )
 
-    def update_balance_by_amount(self, iban: str, amount: Union[int, float]) -> None:
-        raise NotImplementedError
+            self._storage.session.add(association_row)
+            self._storage.session.flush()
+
+        except IntegrityError:
+            self._storage.session.rollback()
+            raise AlreadyExistException('Relation already exist!')
+
+        self._storage.session.commit()
+
+    def update_balance_by_amount(self, iban: str, amount: Union[int, float]) -> bool:
+        result = self._storage.session.query(
+            BankAccount
+        ).filter_by(IBAN=iban).update({
+            BankAccount.balance: BankAccount.balance + amount
+        })
+
+        self._storage.session.commit()
+
+        return result

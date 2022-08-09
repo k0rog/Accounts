@@ -3,7 +3,7 @@ import pytest
 from app.exceptions import DoesNotExistException
 from app.models.sqlalchemy.bank_account import BankAccount
 from app.models.sqlalchemy.bank_card import BankCard
-from app.models.sqlalchemy.many_to_many import bank_accounts
+from app.models.sqlalchemy.many_to_many import association_account_customer
 
 
 BANK_ACCOUNT_DATA = {
@@ -30,7 +30,7 @@ class TestCreate:
         assert storage_bank_account.balance == BANK_ACCOUNT_DATA['currency']
 
         assert storage.session.query(
-            bank_accounts
+            association_account_customer
         ).filter_by(customer_id=customer.uuid, bank_account_id=bank_account.IBAN).first() is not None
 
     def test_with_nonexistent_currency(self, bank_account_service, customer):
@@ -74,7 +74,7 @@ class TestDelete:
         ).filter_by(card_number=bank_card.card_number).first() is None
 
         assert storage.session.query(
-            bank_accounts.bank_account_id
+            association_account_customer.bank_account_id
         ).filter_by(bank_account_id=bank_account.IBAN).first() is None
 
     def test_for_nonexistent_bank_account(self, bank_account_service):
@@ -92,7 +92,7 @@ class TestOwnedByCustomerBankAccountsDelete:
         ).filter_by(IBAN=iban).first() is None
 
         assert storage.session.query(
-            bank_accounts
+            association_account_customer
         ).filter_by(customer_id=customer_uuid, bank_account_id=iban).first() is None
 
     def test_for_one_bank_account_owned_by_customer(self, bank_account_service, storage, customer):
@@ -119,7 +119,7 @@ class TestAddBankAccountForCustomer:
         bank_account_service.add_bank_account_for_customer(customer.uuid, bank_account.IBAN)
 
         assert storage.session.query(
-            bank_accounts
+            association_account_customer
         ).filter_by(customer_id=customer.uuid, bank_account_id=bank_account.IBAN).first() is not None
 
     def test_add_nonexistent_bank_account(self, bank_account_service, storage, customer):

@@ -56,14 +56,14 @@ class BankCardRepository:
             BankCard
         ).filter_by(bank_account_iban=bank_account_iban).all()
 
-    def bulk_delete(self, card_numbers: list[str]) -> None:
-        q = self._storage.session.query(
+    def bulk_delete(self, card_numbers: list[str]) -> bool:
+        is_deleted = self._storage.session.query(
             BankCard
-        ).filter(BankCard.bank_account_iban.in_(card_numbers)).delete()
-
-        self._storage.session.execute(q)
+        ).filter(BankCard.card_number.in_(card_numbers)).delete()
 
         self._storage.session.commit()
+
+        return is_deleted
 
     def delete(self, card_number: str) -> bool:
         is_deleted = self._storage.session.query(

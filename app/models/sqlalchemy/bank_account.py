@@ -27,8 +27,16 @@ def generate_iban():
 
 
 class BankAccount(db.Model):
-    __tablename__ = 'bank_account'
+    def __eq__(self, other):
+        return self.IBAN == other
 
     IBAN = db.Column(db.String(34), primary_key=True, default=generate_iban)
     currency = db.Column(db.Enum(CurrencyEnum), nullable=False)
     balance = db.Column(db.Float, nullable=False, default=0.0)
+
+    customers = db.relationship(
+        "AssociationBankAccountCustomer",
+        back_populates="bank_account",
+        cascade="all, delete",
+        passive_deletes=True,
+    )

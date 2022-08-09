@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from app.models.sqlalchemy.customer import Customer
-from app.models.sqlalchemy.many_to_many import bank_accounts
+from app.models.sqlalchemy.many_to_many import AssociationBankAccountCustomer
 from app.exceptions import AlreadyExistException, DoesNotExistException
 from sqlalchemy.exc import IntegrityError
 
@@ -72,5 +72,5 @@ class CustomerRepository:
 
     def has_bank_account(self, uuid: str) -> bool:
         return self._storage.session.query(
-            bank_accounts.customer_id
+            AssociationBankAccountCustomer.customer_id
         ).filter_by(customer_id=uuid).first() is not None

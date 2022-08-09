@@ -3,7 +3,7 @@ import pytest
 from app.exceptions import AlreadyExistException, DoesNotExistException
 from app.models.sqlalchemy.bank_account import BankAccount
 from app.models.sqlalchemy.customer import Customer
-from app.models.sqlalchemy.many_to_many import bank_accounts
+from app.models.sqlalchemy.many_to_many import association_account_customer
 
 
 CUSTOMER_DATA = {
@@ -32,7 +32,7 @@ class TestCreate:
 
         storage_bank_account = storage.session\
             .query(BankAccount)\
-            .join(bank_accounts, Customer)\
+            .join(association_account_customer, Customer)\
             .filter(Customer.uuid == customer.uuid).first()
 
         assert storage_customer is not None
