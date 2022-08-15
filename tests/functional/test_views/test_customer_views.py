@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+import pytest
+
 from app.models.sqlalchemy.bank_account import BankAccount
 from app.models.sqlalchemy.customer import Customer
 from app.models.sqlalchemy.many_to_many import AssociationBankAccountCustomer
@@ -12,13 +14,6 @@ CUSTOMER_DATA = {
     'bank_account': {
         'currency': 'BYN'
     }
-}
-
-WRONG_CUSTOMER_FIELD_TYPES = {
-    'first_name': 1,
-    'last_name': 1,
-    'email': 1,
-    'passport_number': 1,
 }
 
 
@@ -60,22 +55,18 @@ class TestCustomerCreate:
         print('===================')
         assert response.json['error'] == 'Customer already exist!'
 
-    def test_each_field_with_wrong_format(self, client):
-        wrong_formats = {
-            'email': 'some@@@',
-            'passport_number': '111'
-        }
+    @pytest.mark.parametrize('field', ('email', 'passport_number'))
+    @pytest.mark.parametrize('value', ('some@@@', '111'))
+    def test_with_wrong_field_format(self, client, field, value):
+        wrong_data = CUSTOMER_DATA.copy()
+        wrong_data[field] = value
 
-        for key, value in wrong_formats.items():
-            wrong_data = CUSTOMER_DATA.copy()
-            wrong_data[key] = wrong_formats[key]
+        response = client.post('/api/customers/', json=wrong_data)
 
-            response = client.post('/api/customers/', json=wrong_data)
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
 
-            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-            assert 'error' in response.json
-
-            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
+        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
 
     def test_all_fields_with_wrong_format(self, client):
         wrong_data = CUSTOMER_DATA.copy()
@@ -90,22 +81,29 @@ class TestCustomerCreate:
         assert 'error' in response.json
 
         # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
+    @pytest.mark.parametrize('field', ('first_name', 'last_name', 'email', 'passport_number'))
+    @pytest.mark.parametrize('value', (1, 1, 1, 1))
+    def test_with_wrong_field_type(self, client, field, value):
+        wrong_data = CUSTOMER_DATA.copy()
+        wrong_data[field] = value
 
-    def test_each_field_with_wrong_type(self, client):
-        for key, value in WRONG_CUSTOMER_FIELD_TYPES.items():
-            wrong_data = CUSTOMER_DATA.copy()
-            wrong_data[key] = WRONG_CUSTOMER_FIELD_TYPES[key]
+        response = client.post('/api/customers/', json=wrong_data)
 
-            response = client.post('/api/customers/', json=wrong_data)
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
 
-            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-            assert 'error' in response.json
-
-            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
+        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
 
     def test_all_fields_with_wrong_type(self, client):
-        wrong_data = CUSTOMER_DATA.copy()
-        wrong_data.update(WRONG_CUSTOMER_FIELD_TYPES)
+        wrong_data = {
+            'first_name': 1,
+            'last_name': 1,
+            'email': 1,
+            'passport_number': 1,
+            'bank_account': {
+                'currency': 1
+            }
+        }
 
         response = client.post('/api/customers/', json=wrong_data)
 
@@ -160,23 +158,19 @@ class TestCustomerUpdate:
         assert updated_customer.email == update_data['email']
         assert updated_customer.passport_number == update_data['passport_number']
 
-    def test_wrong_format_for_every_field(self, client):
+    @pytest.mark.parametrize('field', ('email', 'passport_number'))
+    @pytest.mark.parametrize('value', ('some@@@', '111'))
+    def test_with_wrong_field_format(self, client, field, value):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
-        update_data = {
-            'email': 'some@@@',
-            'passport_number': '111'
-        }
+        response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={field: value})
 
-        for key, value in update_data.items():
-            response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={key: value})
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
 
-            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-            assert 'error' in response.json
+        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
 
-            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
-
-    def test_wrong_format_for_multiply_fields(self, client):
+    def test_all_fields_with_wrong_format(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         update_data = {
@@ -190,22 +184,29 @@ class TestCustomerUpdate:
         assert 'error' in response.json
 
         # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
-
-    def test_wrong_field_type_for_one_field(self, client):
+    @pytest.mark.parametrize('field', ('first_name', 'last_name', 'email', 'passport_number'))
+    @pytest.mark.parametrize('value', (1, 1, 1, 1))
+    def test_with_wrong_field_type(self, client, field, value):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
-        for key, value in WRONG_CUSTOMER_FIELD_TYPES.items():
-            response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={key: value})
+        response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={field: value})
 
-            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-            assert 'error' in response.json
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
 
-            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
+        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
 
-    def test_wrong_field_type_for_multiply_fields(self, client):
+    def test_all_fields_with_wrong_type(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
-        response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json=WRONG_CUSTOMER_FIELD_TYPES)
+        response = client.patch(
+            f'/api/customers/{new_customer.json["uuid"]}',
+            json={
+                'first_name': 1,
+                'last_name': 1,
+                'email': 1,
+                'passport_number': 1,
+            })
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
         assert 'error' in response.json
