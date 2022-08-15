@@ -22,20 +22,6 @@ WRONG_CUSTOMER_FIELD_TYPES = {
 }
 
 
-def run_test_for_endpoint_with_invalid_data(client, method: str,
-                                            path: str, json_data: dict, error_message: str):
-    response = getattr(client, method)(path, json=json_data)
-
-    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-
-    print('=======================')
-    print(response.json)
-    print('=======================')
-    assert 'error' in response.json
-
-    assert response.json == error_message
-
-
 class TestCustomerCreate:
     def test_new_customer(self, client, storage):
         response = client.post('/api/customers/', json=CUSTOMER_DATA)
@@ -81,18 +67,15 @@ class TestCustomerCreate:
         }
 
         for key, value in wrong_formats.items():
-            error_message = f'{key[0].upper() + key[1:]} has wrong format!'
-
             wrong_data = CUSTOMER_DATA.copy()
             wrong_data[key] = wrong_formats[key]
 
-            run_test_for_endpoint_with_invalid_data(
-                client,
-                'post',
-                f'/api/customers/',
-                wrong_data,
-                error_message
-            )
+            response = client.post('/api/customers/', json=wrong_data)
+
+            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+            assert 'error' in response.json
+
+            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
 
     def test_all_fields_with_wrong_format(self, client):
         wrong_data = CUSTOMER_DATA.copy()
@@ -101,45 +84,43 @@ class TestCustomerCreate:
             'passport_number': '111'
         })
 
-        run_test_for_endpoint_with_invalid_data(
-            client,
-            'post',
-            f'/api/customers/',
-            wrong_data,
-            ''
-        )
+        response = client.post('/api/customers/', json=wrong_data)
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
+
+        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
 
     def test_each_field_with_wrong_type(self, client):
         for key, value in WRONG_CUSTOMER_FIELD_TYPES.items():
-            error_message = f'{key[0].upper() + key[1:]} has wrong type!'
-
             wrong_data = CUSTOMER_DATA.copy()
             wrong_data[key] = WRONG_CUSTOMER_FIELD_TYPES[key]
 
-            run_test_for_endpoint_with_invalid_data(
-                client,
-                'post',
-                f'/api/customers/',
-                wrong_data,
-                error_message
-            )
+            response = client.post('/api/customers/', json=wrong_data)
+
+            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+            assert 'error' in response.json
+
+            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
 
     def test_all_fields_with_wrong_type(self, client):
         wrong_data = CUSTOMER_DATA.copy()
         wrong_data.update(WRONG_CUSTOMER_FIELD_TYPES)
 
-        run_test_for_endpoint_with_invalid_data(
-            client,
-            'post',
-            f'/api/customers/',
-            wrong_data,
-            ''
-        )
+        response = client.post('/api/customers/', json=wrong_data)
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
+
+        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
 
 
 class TestCustomerUpdate:
-    @staticmethod
-    def generic_test_customer_update(client, storage, update_data):
+    def test_one_field_customer_update(self, client, storage):
+        update_data = {
+            'first_name': 'George',
+        }
+
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         response = client.patch(
@@ -152,16 +133,7 @@ class TestCustomerUpdate:
         ).filter_by(uuid=new_customer.json['uuid']).first()
 
         assert response.status_code == HTTPStatus.NO_CONTENT
-
-        for key, value in update_data.items():
-            assert getattr(updated_customer, key) == value
-
-    def test_one_field_customer_update(self, client, storage):
-        update_data = {
-            'first_name': 'George',
-        }
-
-        TestCustomerUpdate.generic_test_customer_update(client, storage, update_data)
+        assert updated_customer.first_name == update_data['first_name']
 
     def test_full_customer_update(self, client, storage):
         update_data = {
@@ -171,7 +143,22 @@ class TestCustomerUpdate:
             'passport_number': 'HB2072131'
         }
 
-        TestCustomerUpdate.generic_test_customer_update(client, storage, update_data)
+        new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
+
+        response = client.patch(
+            f'/api/customers/{new_customer.json["uuid"]}',
+            json=update_data
+        )
+
+        updated_customer = storage.session.query(
+            Customer.uuid
+        ).filter_by(uuid=new_customer.json['uuid']).first()
+
+        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert updated_customer.first_name == update_data['first_name']
+        assert updated_customer.last_name == update_data['last_name']
+        assert updated_customer.email == update_data['email']
+        assert updated_customer.passport_number == update_data['passport_number']
 
     def test_wrong_format_for_every_field(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
@@ -182,15 +169,12 @@ class TestCustomerUpdate:
         }
 
         for key, value in update_data.items():
-            error_message = f'{key[0].upper() + key[1:]} has wrong format!'
+            response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={key: value})
 
-            run_test_for_endpoint_with_invalid_data(
-                client,
-                'patch',
-                f'/api/customers/{new_customer.json["uuid"]}',
-                {key: value},
-                error_message
-            )
+            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+            assert 'error' in response.json
+
+            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
 
     def test_wrong_format_for_multiply_fields(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
@@ -200,38 +184,33 @@ class TestCustomerUpdate:
             'passport_number': '111'
         }
 
-        run_test_for_endpoint_with_invalid_data(
-            client,
-            'patch',
-            f'/api/customers/{new_customer.json["uuid"]}',
-            update_data,
-            ''
-        )
+        response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json=update_data)
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
+
+        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
 
     def test_wrong_field_type_for_one_field(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         for key, value in WRONG_CUSTOMER_FIELD_TYPES.items():
-            error_message = f'{key[0].upper() + key[1:]} has wrong type!'
+            response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={key: value})
 
-            run_test_for_endpoint_with_invalid_data(
-                client,
-                'patch',
-                f'/api/customers/{new_customer.json["uuid"]}',
-                {key: value},
-                error_message
-            )
+            assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+            assert 'error' in response.json
+
+            assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
 
     def test_wrong_field_type_for_multiply_fields(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
-        run_test_for_endpoint_with_invalid_data(
-            client,
-            'patch',
-            f'/api/customers/{new_customer.json["uuid"]}',
-            WRONG_CUSTOMER_FIELD_TYPES,
-            ''
-        )
+        response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json=WRONG_CUSTOMER_FIELD_TYPES)
+
+        assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+        assert 'error' in response.json
+
+        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
 
 
 class TestCustomerDelete:
