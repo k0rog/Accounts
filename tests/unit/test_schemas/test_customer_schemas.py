@@ -1,6 +1,6 @@
 import uuid
 import json
-
+import copy
 import marshmallow.exceptions
 import pytest
 
@@ -69,6 +69,7 @@ class TestCustomerCreateSchema:
         wrong_data = CUSTOMER_DATA.copy()
         del wrong_data['first_name']
         del wrong_data['last_name']
+
         schema = CustomerCreateSchema()
 
         with pytest.raises(marshmallow.exceptions.ValidationError) as exception_info:
@@ -79,9 +80,8 @@ class TestCustomerCreateSchema:
         assert error_message_dict['last_name'][0] == f'Missing data for required field.'
 
     def test_with_nonexistent_currency(self):
-        wrong_data = CUSTOMER_DATA.copy()
+        wrong_data = copy.deepcopy(CUSTOMER_DATA)
         wrong_data['bank_account']['currency'] = '123a'
-
         schema = CustomerCreateSchema()
 
         with pytest.raises(marshmallow.exceptions.ValidationError) as exception_info:
@@ -90,13 +90,12 @@ class TestCustomerCreateSchema:
         error_message_dict = exception_info.value.messages
         assert len(error_message_dict) == 1
         assert 'bank_account' in error_message_dict
-        assert error_message_dict['bank_account'][0] == f'Not a valid currency'
+        assert error_message_dict['bank_account']['currency'][0] == f'Not a valid currency.'
 
     @pytest.mark.parametrize('field,value', (('email', 'some@@@'), ('passport_number', '111')))
     def test_with_wrong_format(self, field, value):
         wrong_data = CUSTOMER_DATA.copy()
         wrong_data[field] = value
-
         schema = CustomerCreateSchema()
 
         with pytest.raises(marshmallow.exceptions.ValidationError) as exception_info:
@@ -161,7 +160,7 @@ class TestCustomerCreateSchema:
         assert error_message_dict['email'][0] == f'Not a valid string.'
         assert error_message_dict['passport_number'][0] == f'Not a valid string.'
 
-        assert error_message_dict['bank_account'][0] == f'Not a valid string.'
+        assert error_message_dict['bank_account']['currency'][0] == f'Not a valid string.'
 
 
 class TestCustomerUpdateSchema:

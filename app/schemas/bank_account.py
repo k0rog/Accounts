@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema, validates, ValidationError, validate
+from marshmallow import fields, Schema, validates, ValidationError
 import re
 
 
@@ -16,11 +16,11 @@ class BankAccountSchema(Schema):
     @validates('IBAN')
     def validate_iban(self, iban):
         if re.match(r'^[a-zA-Z]{2}[0-9a-zA-Z]{6}\d{20}$', iban) is None:
-            raise ValidationError("Wrong iban format")
+            raise ValidationError("Not a valid IBAN format.")
         return iban
 
     @validates('currency')
     def validate_currency(self, currency):
         if currency.upper() not in ALLOWED_CURRENCY_LIST:
-            raise ValidationError("Not allowed currency")
+            raise ValidationError("Not a valid currency.")
         return currency
