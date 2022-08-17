@@ -1,3 +1,4 @@
+import re
 from http import HTTPStatus
 
 import pytest
@@ -18,11 +19,22 @@ CUSTOMER_DATA = {
 
 
 class TestCustomerCreate:
-    def test_new_customer(self, client, storage):
+    def test_uuid_returned(self, client):
         response = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         assert response.status_code == HTTPStatus.CREATED
         assert 'uuid' in response.json
+
+        assert re.match(
+            r'^[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}\Z',
+            response.json['uuid'],
+            flags=re.I
+        ) is not None
+
+    def test_new_customer(self, client, storage):
+        response = client.post('/api/customers/', json=CUSTOMER_DATA)
+
+        assert response.status_code == HTTPStatus.CREATED
 
         customer = storage.session.query(
             Customer.uuid
@@ -68,7 +80,7 @@ class TestCustomerCreate:
 
         assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
 
-    def test_all_fields_with_wrong_format(self, client):
+    def test_with_all_fields_having_wrong_format(self, client):
         wrong_data = CUSTOMER_DATA.copy()
         wrong_data.update({
             'email': 'some@@@',
@@ -94,7 +106,7 @@ class TestCustomerCreate:
 
         assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
 
-    def test_all_fields_with_wrong_type(self, client):
+    def test_with_all_fields_having_wrong_type(self, client):
         wrong_data = {
             'first_name': 1,
             'last_name': 1,
@@ -170,7 +182,7 @@ class TestCustomerUpdate:
 
         assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
 
-    def test_all_fields_with_wrong_format(self, client):
+    def test_with_all_fields_having_wrong_format(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         update_data = {
@@ -196,7 +208,7 @@ class TestCustomerUpdate:
 
         assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
 
-    def test_all_fields_with_wrong_type(self, client):
+    def test_with_all_fields_having_wrong_type(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         response = client.patch(
