@@ -24,8 +24,7 @@ class BaseCustomerSchema(Schema):
 
 class CustomerCreateSchema(BaseCustomerSchema):
     class Meta:
-        strict = True
-        required = ('passport_number', 'email', 'first_name', 'last_name')
+        required = ('first_name', 'last_name', 'email', 'passport_number')
         load_only = ('first_name', 'last_name', 'email', 'passport_number', 'bank_account')
 
     uuid = fields.String()
@@ -33,8 +32,11 @@ class CustomerCreateSchema(BaseCustomerSchema):
 
 
 class CustomerUpdateSchema(BaseCustomerSchema):
-    pass
+    class Meta:
+        required = ('first_name', 'last_name', 'email', 'passport_number')
 
 
 class CustomerRetrieveSchema(BaseCustomerSchema):
-    pass
+    class Meta:
+        strict = True
+        required = ('passport_number', 'email', 'first_name', 'last_name')
