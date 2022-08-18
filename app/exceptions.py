@@ -5,6 +5,11 @@ from flask import jsonify, make_response
 
 class AppException(Exception):
     """Base exception to be caught"""
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 class AlreadyExistException(AppException):
@@ -17,6 +22,10 @@ class ValidationException(AppException):
 
 class DoesNotExistException(AppException):
     """Domain constraint violation"""
+
+
+class AccessDeniedException(AppException):
+    """Attempt to modify constant data"""
 
 
 def app_exception_handler(exception):
@@ -36,6 +45,10 @@ def app_exception_handler(exception):
 def api_exception_handler(err):
     headers = err.data.get('headers', None)
     messages = err.data.get('messages', ['Invalid request.'])
+
+    if 'json' in messages:
+        messages = messages['json']
+
     if headers:
         return jsonify({'errors': messages}), err.code, headers
     else:

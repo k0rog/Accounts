@@ -1,6 +1,8 @@
 import enum
 import random
 import hashlib
+from flask import current_app
+
 from app.storage.sqlalchemy import db
 
 
@@ -10,18 +12,31 @@ class CurrencyEnum(enum.Enum):
     EUR = 'EUR'
 
 
-class BankAccount(db.Model):
-    __tablename__ = 'bank_account'
+def generate_iban():
+    config = current_app.config
+    country_code = config['IBAN_COUNTRY_IDENTIFIER']
+    bank_identifier = config['IBAN_BANK_IDENTIFIER']
+    iban_length = int(config['IBAN_BBAN_LENGTH'])
 
-    IBAN = db.Column(db.String(34), primary_key=True)
+    bban = ''.join(["%s" % random.randint(0, 9) for _ in range(0, iban_length)])
+    bban_hash = hashlib.shake_256(bban.encode('utf-8')).hexdigest(length=1)
+
+    iban = country_code + bban_hash + bank_identifier + bban
+
+    return iban.upper()
+
+
+class BankAccount(db.Model):
+    def __eq__(self, other):
+        return self.IBAN == other
+
+    IBAN = db.Column(db.String(34), primary_key=True, default=generate_iban)
     currency = db.Column(db.Enum(CurrencyEnum), nullable=False)
     balance = db.Column(db.Float, nullable=False, default=0.0)
 
-    @staticmethod
-    def generate_iban(country_code: str, bank_identifier: str, iban_length: int):
-        bban = ''.join(["%s" % random.randint(0, 9) for _ in range(0, iban_length)])
-        bban_hash = hashlib.shake_256(bban.encode('utf-8')).hexdigest(length=1)
-
-        iban = country_code + bban_hash + bank_identifier + bban
-
-        return iban.upper()
+    customers = db.relationship(
+        "AssociationBankAccountCustomer",
+        back_populates="bank_account",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
