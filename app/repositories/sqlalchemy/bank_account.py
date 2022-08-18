@@ -62,10 +62,13 @@ class BankAccountRepository:
         return bank_account
 
     def get_owned_by_customer(self, customer_uuid) -> list[BankAccount]:
-        return self._storage.session \
-            .query(BankAccount) \
-            .join(AssociationBankAccountCustomer) \
-            .filter(AssociationBankAccountCustomer.customer_id == customer_uuid).all()
+        return self._storage.session.query(
+            BankAccount
+        ).join(
+            AssociationBankAccountCustomer
+        ).filter(
+            AssociationBankAccountCustomer.customer_id == customer_uuid
+        ).all()
 
     def delete(self, iban: str) -> bool:
         is_deleted = self._storage.session.query(
