@@ -2,9 +2,11 @@ from app.exceptions import DoesNotExistException
 from app.repositories.sqlalchemy.customer import CustomerRepository
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.models.sqlalchemy.customer import Customer
+from injector import inject
 
 
 class CustomerService:
+    @inject
     def __init__(
         self,
         customer_repository: CustomerRepository,

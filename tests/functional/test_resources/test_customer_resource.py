@@ -37,15 +37,10 @@ class TestCustomerCreate:
         assert response.status_code == HTTPStatus.CREATED
 
         customer = storage.session.query(
-            Customer.uuid
+            Customer
         ).filter_by(uuid=response.json['uuid']).first()
 
         assert customer is not None
-
-        assert customer.first_name == response.json['first_name']
-        assert customer.last_name == response.json['last_name']
-        assert customer.email == response.json['email']
-        assert customer.passport_number == response.json['passport_number']
 
         bank_account = storage.session \
             .query(BankAccount) \
@@ -62,13 +57,9 @@ class TestCustomerCreate:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert 'error' in response.json
-        print('===================')
-        print(response.json)
-        print('===================')
         assert response.json['error'] == 'Customer already exist!'
 
-    @pytest.mark.parametrize('field', ('email', 'passport_number'))
-    @pytest.mark.parametrize('value', ('some@@@', '111'))
+    @pytest.mark.parametrize('field,value', (('email', 'some@@@'), ('passport_number', '111')))
     def test_with_wrong_field_format(self, client, field, value):
         wrong_data = CUSTOMER_DATA.copy()
         wrong_data[field] = value
@@ -76,25 +67,28 @@ class TestCustomerCreate:
         response = client.post('/api/customers/', json=wrong_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
+        assert response.json['errors'][field][0] == f'Not a valid {field} format.'
 
     def test_with_all_fields_having_wrong_format(self, client):
-        wrong_data = CUSTOMER_DATA.copy()
-        wrong_data.update({
+        wrong_data = {
             'email': 'some@@@',
             'passport_number': '111'
-        })
+        }
+        customer_data = CUSTOMER_DATA.copy()
+        customer_data.update(wrong_data)
 
         response = client.post('/api/customers/', json=wrong_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
+        for key in wrong_data.keys():
+            assert response.json['errors'][key][0] == f'Not a valid {key} format.'
+
     @pytest.mark.parametrize('field', ('first_name', 'last_name', 'email', 'passport_number'))
-    @pytest.mark.parametrize('value', (1, 1, 1, 1))
+    @pytest.mark.parametrize('value', (1,))
     def test_with_wrong_field_type(self, client, field, value):
         wrong_data = CUSTOMER_DATA.copy()
         wrong_data[field] = value
@@ -102,9 +96,9 @@ class TestCustomerCreate:
         response = client.post('/api/customers/', json=wrong_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
+        assert response.json['errors'][field][0] == f'Not a valid string.'
 
     def test_with_all_fields_having_wrong_type(self, client):
         wrong_data = {
@@ -120,9 +114,13 @@ class TestCustomerCreate:
         response = client.post('/api/customers/', json=wrong_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
+        assert response.json['errors']['first_name'][0] == f'Not a valid string.'
+        assert response.json['errors']['last_name'][0] == f'Not a valid string.'
+        assert response.json['errors']['email'][0] == f'Not a valid string.'
+        assert response.json['errors']['passport_number'][0] == f'Not a valid string.'
+        assert response.json['errors']['bank_account']['currency'][0] == f'Not a valid string.'
 
 
 class TestCustomerUpdate:
@@ -139,7 +137,7 @@ class TestCustomerUpdate:
         )
 
         updated_customer = storage.session.query(
-            Customer.uuid
+            Customer
         ).filter_by(uuid=new_customer.json['uuid']).first()
 
         assert response.status_code == HTTPStatus.NO_CONTENT
@@ -161,7 +159,7 @@ class TestCustomerUpdate:
         )
 
         updated_customer = storage.session.query(
-            Customer.uuid
+            Customer
         ).filter_by(uuid=new_customer.json['uuid']).first()
 
         assert response.status_code == HTTPStatus.NO_CONTENT
@@ -170,17 +168,16 @@ class TestCustomerUpdate:
         assert updated_customer.email == update_data['email']
         assert updated_customer.passport_number == update_data['passport_number']
 
-    @pytest.mark.parametrize('field', ('email', 'passport_number'))
-    @pytest.mark.parametrize('value', ('some@@@', '111'))
+    @pytest.mark.parametrize('field,value', (('email', 'some@@@'), ('passport_number', '111')))
     def test_with_wrong_field_format(self, client, field, value):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={field: value})
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong format!'
+        assert response.json['errors'][field][0] == f'Not a valid {field} format.'
 
     def test_with_all_fields_having_wrong_format(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
@@ -193,20 +190,22 @@ class TestCustomerUpdate:
         response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json=update_data)
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong format!'
+        for key in update_data.keys():
+            assert response.json['errors'][key][0] == f'Not a valid {key} format.'
+
     @pytest.mark.parametrize('field', ('first_name', 'last_name', 'email', 'passport_number'))
-    @pytest.mark.parametrize('value', (1, 1, 1, 1))
+    @pytest.mark.parametrize('value', (1,))
     def test_with_wrong_field_type(self, client, field, value):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
 
         response = client.patch(f'/api/customers/{new_customer.json["uuid"]}', json={field: value})
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        assert response.json['error'][field] == f'{field[0].upper() + field[1:]} has wrong type!'
+        assert response.json['errors'][field][0] == f'Not a valid string.'
 
     def test_with_all_fields_having_wrong_type(self, client):
         new_customer = client.post('/api/customers/', json=CUSTOMER_DATA)
@@ -221,9 +220,12 @@ class TestCustomerUpdate:
             })
 
         assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-        assert 'error' in response.json
+        assert 'errors' in response.json
 
-        # assert response.json['error'][key] == f'{key[0].upper() + key[1:]} has wrong type!'
+        assert response.json['errors']['first_name'][0] == f'Not a valid string.'
+        assert response.json['errors']['last_name'][0] == f'Not a valid string.'
+        assert response.json['errors']['email'][0] == f'Not a valid string.'
+        assert response.json['errors']['passport_number'][0] == f'Not a valid string.'
 
 
 class TestCustomerDelete:
@@ -235,7 +237,7 @@ class TestCustomerDelete:
         assert response.status_code == HTTPStatus.NO_CONTENT
         assert storage.session.query(
             Customer.uuid
-        ).filter_by(uuid=response.json['uuid']).first() is None
+        ).filter_by(uuid=new_customer.json['uuid']).first() is None
 
     def test_delete_nonexistent_customer(self, client, customer_repository):
         response = client.delete(f'/api/customers/something')

@@ -5,6 +5,7 @@ from injector import Binder, Module, singleton
 
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
 from app.repositories.sqlalchemy.customer import CustomerRepository
+from app.services.customer import CustomerService
 from app.storage.sqlalchemy import configure_db
 
 
@@ -21,3 +22,7 @@ class SQLAlchemyModule(Module):
         binder.bind(interface=Config, to=self.config, scope=singleton)
         binder.bind(interface=BankAccountRepository, to=BankAccountRepository, scope=singleton)
         binder.bind(interface=CustomerRepository, to=CustomerRepository, scope=singleton)
+
+        binder.bind(interface=CustomerService, to=CustomerService, scope=singleton)
+
+

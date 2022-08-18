@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event
 
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.app import create_app
 from app.repositories.sqlalchemy.bank_account import BankAccountRepository
@@ -30,7 +30,7 @@ def app():
 def db(app):
     _db.create_all()
     yield _db
-    # _db.close_all_sessions()
+    _db.close_all_sessions()
     _db.drop_all()
 
 
@@ -42,17 +42,17 @@ def connection(db):
 
 
 @pytest.fixture(scope='function')
-def storage(connection) -> SQLAlchemy:
+def storage(db, connection) -> SQLAlchemy:
     trans = connection.begin()
     db.session = scoped_session(sessionmaker(bind=connection))
-    nested = connection.begin_nested()
+    db.session.begin_nested()
 
     @event.listens_for(db.session, "after_transaction_end")
-    def end_savepoint(*args):
-        nonlocal nested
+    def restart_savepoint(session, transaction):
+        if transaction.nested and not transaction._parent.nested:
+            session.expire_all()
 
-        if not nested.is_active:
-            nested = connection.begin_nested()
+            session.begin_nested()
 
     yield db
 
@@ -119,6 +119,9 @@ def bank_account(permanent_session):
             '''There's very small chance to generate duplicated IBAN
             But since this chance still exists, we have to repeat the operation'''
             permanent_session.rollback()
+        except SQLAlchemyError:
+            permanent_session.rollback()
+            raise
 
     association_row = AssociationBankAccountCustomer(
         bank_account_id=bank_account.IBAN,
@@ -137,10 +140,15 @@ def customer(permanent_session):
         first_name='John',
         last_name='Smith',
         email='jsmith@gmail.com',
-        passport_number='HB1111111',
+        passport_number='HB2222222',
     )
 
     permanent_session.add(customer)
-    permanent_session.commit()
+
+    try:
+        permanent_session.commit()
+    except SQLAlchemyError:
+        permanent_session.rollback()
+        raise
 
     yield customer

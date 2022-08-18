@@ -45,6 +45,10 @@ def app_exception_handler(exception):
 def api_exception_handler(err):
     headers = err.data.get('headers', None)
     messages = err.data.get('messages', ['Invalid request.'])
+
+    if 'json' in messages:
+        messages = messages['json']
+
     if headers:
         return jsonify({'errors': messages}), err.code, headers
     else:
